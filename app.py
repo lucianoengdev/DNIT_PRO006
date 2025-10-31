@@ -57,12 +57,12 @@ def normalizar_binario(valor):
 
 def calcular_variancia_2p(a, b):
     if a == 0 or b == 0: return 0.0
-    # Variância amostral (n-1) para 2 pontos.
     var = ((a - b) ** 2) / 2
     return var
 
 # --- 3. O "CÉREBRO" (Etapa 3 / Passo 5) ---
 def processar_planilha_pro006(caminho_arquivo, linha_dados_str, tipo_pista):
+    """O "Cérebro" do PRO-006: Lógica binária e inventário alternado."""
     conn = sqlite3.connect('projeto_pro006.db')
     try:
         cursor = conn.cursor()
@@ -78,16 +78,23 @@ def processar_planilha_pro006(caminho_arquivo, linha_dados_str, tipo_pista):
 
         for _, row in df.iterrows():
             estaca_index += 1
+
             km = row.get(COLUNA_KM)
-            if pd.isna(km) or str(km).strip() == "": continue
+            if pd.isna(km) or str(km).strip() == "":
+                continue
+
             km_val = normalizar_valor(km)
             km_segmento = math.floor(km_val)
 
             sql_data = {
-                'km': km_val, 'km_segmento': km_segmento, 'tipo_pista': tipo_pista,
-                'foi_inventariada': 0, 'g1': 0, 'g2': 0, 'g3': 0, 'g4': 0,
+                'km': km_val,
+                'km_segmento': km_segmento,
+                'tipo_pista': tipo_pista,
+                'foi_inventariada': 0,
+                'g1': 0, 'g2': 0, 'g3': 0, 'g4': 0,
                 'd_o': 0, 'd_p': 0, 'd_e': 0, 'd_ex': 0, 'd_d': 0, 'd_r': 0,
-                'fch_media_estaca': 0.0, 'fch_var_estaca': 0.0
+                'fch_media_estaca': 0.0,
+                'fch_var_estaca': 0.0
             }
 
             is_odd = (estaca_index % 2 != 0)
@@ -103,20 +110,31 @@ def processar_planilha_pro006(caminho_arquivo, linha_dados_str, tipo_pista):
                 mapa_defeitos = MAPA_COLUNAS_LD if is_odd else MAPA_COLUNAS_LE
 
             if sql_data['foi_inventariada'] == 1 and mapa_defeitos:
+
+                # 4.1 Defeitos Agrupados (G1-G4)
                 for grupo in DEFEITOS_AGRUPADOS:
                     for col_idx in mapa_defeitos[grupo]:
                         if normalizar_binario(row.get(col_idx)) == 1:
-                            sql_data[grupo] = 1; break
+                            # --- A CORREÇÃO ESTÁ AQUI ---
+                            # Salva em minúsculo (ex: 'g1') em vez de 'G1'
+                            sql_data[grupo.lower()] = 1
+                            break # Achou um defeito, para de procurar
 
-                if sql_data['g3'] == 1: sql_data['g1'] = 0; sql_data['g2'] = 0
-                elif sql_data['g2'] == 1: sql_data['g1'] = 0
+                # 4.2 Regra de Prioridade
+                if sql_data['g3'] == 1:
+                    sql_data['g1'] = 0; sql_data['g2'] = 0
+                elif sql_data['g2'] == 1:
+                    sql_data['g1'] = 0
 
+                # 4.3 Defeitos Individuais (G5-G8)
                 for defeito in DEFEITOS_INDIVIDUAIS:
                     col_idx = mapa_defeitos[defeito]
                     sql_data[defeito.lower()] = normalizar_binario(row.get(col_idx))
 
+                # 4.4 Cálculo das Flechas (FCH)
                 tri = normalizar_valor(row.get(mapa_defeitos['TRI']))
                 tre = normalizar_valor(row.get(mapa_defeitos['TRE']))
+
                 sql_data['fch_media_estaca'] = (tri + tre) / 2
                 sql_data['fch_var_estaca'] = calcular_variancia_2p(tri, tre)
 
@@ -137,6 +155,7 @@ def processar_planilha_pro006(caminho_arquivo, linha_dados_str, tipo_pista):
             lista_de_valores.append(tuple(valores_estaca))
 
         cursor.executemany(sql_query, lista_de_valores)
+        print("Inserção em massa concluída.")
 
         # Limpeza de NULLs
         colunas_para_limpar = [col for col in colunas_db if col not in ['km', 'km_segmento', 'tipo_pista']]
@@ -146,18 +165,47 @@ def processar_planilha_pro006(caminho_arquivo, linha_dados_str, tipo_pista):
         conn.commit()
         conn.close()
 
-        print("Cérebro PRO-006 (V5) concluído. Banco de dados populado.")
+        print("Cérebro PRO-006 (V6 - Correção Maiúscula) concluído.")
         return True, None
 
     except Exception as e:
         print(f"ERRO NO PROCESSAMENTO PRO-006: {e}")
         traceback.print_exc()
-        if conn: conn.rollback(); conn.close()
+        if conn:
+            conn.rollback()
+            conn.close()
         return False, str(e)
 
 
-# --- 4. ROTA DE RELATÓRIO (Etapa 4 / Passo 6) ---
-# ESTA É A FUNÇÃO ATUALIZADA
+# --- 4. ROTAS FLASK (COM TODAS AS ROTAS) ---
+
+# ROTA 1: A PÁGINA INICIAL (A CORREÇÃO)
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+# ROTA 2: O UPLOAD (A CORREÇÃO)
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    if 'planilha' not in request.files: return "Nenhum arquivo encontrado!"
+    file = request.files['planilha']
+    if file.filename == '': return "Nenhum arquivo selecionado!"
+    
+    linha_inicial = request.form['linha_inicial']
+    tipo_pista = request.form['tipo_pista'] 
+    
+    if file:
+        caminho_seguro = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+        file.save(caminho_seguro)
+        
+        sucesso, erro = processar_planilha_pro006(caminho_seguro, linha_inicial, tipo_pista)
+        
+        if sucesso:
+            return redirect(url_for('relatorio'))
+        else:
+            return f"Erro: {erro}"
+
+# ROTA 3: O RELATÓRIO (O CÓDIGO QUE JÁ TÍNHAMOS)
 @app.route('/relatorio')
 def relatorio():
     conn = None
@@ -167,17 +215,15 @@ def relatorio():
         cursor = conn.cursor()
 
         # --- 1. DADOS PARA O GRÁFICO 1 (Linear de Ocorrência) ---
-        # Vamos plotar o IGI das estacas. Mas o PRO-006 não calcula IGI por estaca...
-        # Vamos plotar a FCH_Media_Estaca, que é um bom indicador por estaca.
         cursor.execute("SELECT km, fch_media_estaca FROM estacas WHERE foi_inventariada = 1 ORDER BY km")
         estacas = cursor.fetchall()
-
+        
         x_km = [row['km'] for row in estacas]
         y_fch = [row['fch_media_estaca'] for row in estacas]
 
         fig1 = go.Figure()
         fig1.add_trace(go.Scatter(x=x_km, y=y_fch, mode='lines+markers', name='Média Flechas (FCH)'))
-
+        
         fig1.update_layout(
             title="Linear de Ocorrência (Média FCH por Estaca Inventariada)",
             xaxis_title="Quilômetro (km)",
@@ -187,10 +233,8 @@ def relatorio():
         graphJSON1 = json.dumps(fig1, cls=plotly.utils.PlotlyJSONEncoder)
 
         # --- 2. CÁLCULO DO IGG POR SEGMENTO (Sua Lógica PRO-006) ---
-
-        # 2.1. Monta a string da consulta SQL para os defeitos
         select_defeitos = ", ".join([f"SUM({chave.lower()}) as f_abs_{chave.lower()}" for chave in TODOS_DEFEITOS_CHAVES])
-
+        
         query_segmentos = f"""
             SELECT 
                 km_segmento,
@@ -207,59 +251,48 @@ def relatorio():
         """
         cursor.execute(query_segmentos)
         segmentos_db = cursor.fetchall()
-        conn.close() # Fechamos o DB, o resto é Python
+        conn.close()
 
-        # --- 2.2. Loop em Python para calcular o IGG Final ---
-        segmentos_finais = [] # Lista para a tabela HTML
-        igg_para_grafico_2 = [] # Lista para o Gráfico 2
+        segmentos_finais = []
+        igg_para_grafico_2 = []
 
         for row in segmentos_db:
             N = row['N']
-            if N == 0:
-                continue # Pula segmentos sem estacas inventariadas
+            if N == 0: continue
 
             igg_defeitos_total = 0.0
-
-            # Loop pelos DEFEITOS (G1-G8)
+            
             for chave in TODOS_DEFEITOS_CHAVES:
                 chave_sql = f"f_abs_{chave.lower()}"
                 f_abs = row[chave_sql]
                 f_r = (f_abs * 100) / N
-
-                # Usa a chave correta para o Fator de Ponderação
                 fp_chave = chave.upper()
                 fp = FATORES_PONDERACAO[fp_chave]
-
                 igi = f_r * fp
                 igg_defeitos_total += igi
 
-            # --- 2.3. Lógica das Flechas (PRO-006) ---
             media_fch = row['media_fch']
             media_var = row['media_var']
-
-            # Regra 1 (Média)
+            
             igi_trilha = 0.0
             if media_fch <= 30:
                 igi_trilha = media_fch * (4/3)
             else:
                 igi_trilha = 40.0
-
-            # Regra 2 (Variância)
-            igi_flecha_final = igi_trilha # Começa com o valor da Regra 1
+            
+            igi_flecha_final = igi_trilha
             if media_var > 50:
-                igi_flecha_final = 50.0 # Regra 2 sobrescreve
-
-            # --- 2.4. O IGG FINAL (SOMA) ---
+                igi_flecha_final = 50.0
+            
             igg_final_segmento = igg_defeitos_total + igi_flecha_final
 
-            # Guarda os resultados
             segmentos_finais.append({
                 'km_segmento': row['km_segmento'],
                 'km_inicio': row['km_inicio'],
                 'km_fim_corrigido': row['km_fim_corrigido'],
-                'igg_soma': igg_final_segmento # O IGG Final
+                'igg_soma': igg_final_segmento
             })
-
+            
             igg_para_grafico_2.append(igg_final_segmento)
 
         # --- 3. GRÁFICO 2 (IGG por Segmento) ---
@@ -268,10 +301,9 @@ def relatorio():
 
         fig2 = go.Figure()
         fig2.add_trace(go.Scatter(x=x_segmento, y=y_igg_soma, mode='lines+markers', name='IGG por Segmento'))
-
+        
         y_max_soma = max(y_igg_soma) if y_igg_soma else 160
-
-        # Faixas de "Conceito"
+        
         fig2.add_hrect(y0=0, y1=20, line_width=0, fillcolor='green', opacity=0.1, layer="below", annotation_text="Ótimo", annotation_position="right")
         fig2.add_hrect(y0=20, y1=40, line_width=0, fillcolor='yellow', opacity=0.1, layer="below", annotation_text="Bom", annotation_position="right")
         fig2.add_hrect(y0=40, y1=80, line_width=0, fillcolor='orange', opacity=0.1, layer="below", annotation_text="Regular", annotation_position="right")
@@ -286,7 +318,6 @@ def relatorio():
         )
         graphJSON2 = json.dumps(fig2, cls=plotly.utils.PlotlyJSONEncoder)
 
-        # Envia tudo para o template
         return render_template('relatorio.html', 
                                graphJSON=graphJSON1, 
                                graphJSON2=graphJSON2, 
