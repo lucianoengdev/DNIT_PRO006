@@ -1,26 +1,45 @@
 import sqlite3
-conn = sqlite3.connect('projeto_pro006.db') # Novo nome de arquivo!
+
+# Conecta ao banco de dados (cria o arquivo se não existir)
+conn = sqlite3.connect('projeto_pro006.db')
 cursor = conn.cursor()
+
+# Destrói a tabela 'estacas' antiga (se ela existir)
 cursor.execute('DROP TABLE IF EXISTS estacas')
+
+# Cria a nova tabela 'estacas' (V4) com a lógica BINÁRIA do PRO-006
 cursor.execute('''
 CREATE TABLE estacas (
-    id INTEGER PRIMARY KEY AUTOINCREMENT, km REAL NOT NULL,
-    area_g1_le REAL, fr_g1_le REAL, igi_g1_le REAL, area_g1_ld REAL, fr_g1_ld REAL, igi_g1_ld REAL,
-    area_g2_le REAL, fr_g2_le REAL, igi_g2_le REAL, area_g2_ld REAL, fr_g2_ld REAL, igi_g2_ld REAL,
-    area_g3_le REAL, fr_g3_le REAL, igi_g3_le REAL, area_g3_ld REAL, fr_g3_ld REAL, igi_g3_ld REAL,
-    area_g4_le REAL, fr_g4_le REAL, igi_g4_le REAL, area_g4_ld REAL, fr_g4_ld REAL, igi_g4_ld REAL,
-    area_g5_le REAL, fr_g5_le REAL, igi_g5_le REAL, area_g5_ld REAL, fr_g5_ld REAL, igi_g5_ld REAL,
-    area_g6_le REAL, fr_g6_le REAL, igi_g6_le REAL, area_g6_ld REAL, fr_g6_ld REAL, igi_g6_ld REAL,
-    area_g7_le REAL, fr_g7_le REAL, igi_g7_le REAL, area_g7_ld REAL, fr_g7_ld REAL, igi_g7_ld REAL,
-    area_g8_le REAL, fr_g8_le REAL, igi_g8_le REAL, area_g8_ld REAL, fr_g8_ld REAL, igi_g8_ld REAL,
-    igg_defeitos_g1_g8 REAL,
-    valor_tri_le REAL, valor_tri_ld REAL, valor_tre_le REAL, valor_tre_ld REAL,
-    mean_le REAL, mean_ld REAL, var_le REAL, var_ld REAL,
-    tri_agg REAL, tre_agg REAL,
-    igi_trilha REAL, igi_var REAL, igi_flechas_final REAL,
-    igg_total_final_estaca REAL
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    km REAL NOT NULL,
+    km_segmento INTEGER NOT NULL, -- Para agrupar (ex: 0, 1, 2)
+
+    tipo_pista TEXT NOT NULL,      -- 'simples', 'dupla', 'terceira_faixa'
+    foi_inventariada INTEGER NOT NULL, -- 1 se foi, 0 se não foi
+
+    -- Colunas BINÁRIAS (1 ou 0) para defeitos agrupados
+    g1 INTEGER DEFAULT 0,
+    g2 INTEGER DEFAULT 0,
+    g3 INTEGER DEFAULT 0,
+    g4 INTEGER DEFAULT 0,
+
+    -- Colunas BINÁRIAS (1 ou 0) para defeitos individuais (do G5 em diante)
+    d_o INTEGER DEFAULT 0, -- Defeito 'O'
+    d_p INTEGER DEFAULT 0, -- Defeito 'P'
+    d_e INTEGER DEFAULT 0, -- Defeito 'E'
+    d_ex INTEGER DEFAULT 0,
+    d_d INTEGER DEFAULT 0,
+    d_r INTEGER DEFAULT 0,
+
+    -- Colunas para o cálculo das Flechas (FCH)
+    -- Estes são os valores calculados (média e variância) daquela estaca
+    fch_media_estaca REAL DEFAULT 0.0,
+    fch_var_estaca REAL DEFAULT 0.0
 );
 ''')
+
 conn.commit()
 conn.close()
-print("Banco de dados 'projeto_pro006.db' (V3) criado com sucesso!")
+
+print("Banco de dados 'projeto_pro006.db' (V4) criado com sucesso!")
+print("Tabela 'estacas' agora usa a lógica binária (1/0) do PRO-006.")
