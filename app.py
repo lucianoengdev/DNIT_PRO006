@@ -13,77 +13,56 @@ app = Flask(__name__)
 UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'uploads')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-AREA_ESTACAO = 20 * 3.5 
+# --- CONSTANTES PRO-006 ---
+AREA_ESTACAO = 20 * 3.5 # 70.0 m²
 
 FATORES_PONDERACAO = {
     'G1': 0.2, 'G2': 0.5, 'G3': 0.8, 'G4': 0.9,
-    'D_O': 1.0, 'D_P': 1.0, 'D_E': 1.0, # Grupo 5
-    'D_EX': 0.5, # Grupo 6
-    'D_D': 0.3,  # Grupo 7
-    'D_R': 0.6   # Grupo 8
+    'D_O': 1.0, 'D_P': 1.0, 'D_E': 1.0,
+    'D_EX': 0.5, 'D_D': 0.3, 'D_R': 0.6
 }
 
-# --- MAPEAMENTO DE COLUNAS (Corrigido para defeitos individuais G5-G8) ---
-COLUNA_KM = 0 
+# --- MAPEAMENTO DE COLUNAS (Corrigido) ---
+COLUNA_KM = 0
 MAPA_COLUNAS_LE = {
-    'OK': 1, 
-    'G1': [2, 3, 4, 5, 6, 7],         # FI, TTC, TTL, TLC, TLL, TRR
-    'G2': [8, 9],                     # J, TB
-    'G3': [10, 11],                   # JE, TBE
-    'G4': [12, 13, 14, 15],           # ALP, ATP, ALC, ATC
-    'D_O': 16, 'D_P': 17, 'D_E': 18,  # G5 (Individuais)
-    'D_EX': 19,                       # G6
-    'D_D': 20,                        # G7
-    'D_R': 21,                        # G8
-    'TRI': 22, 'TRE': 23
+    'OK': 1, 'G1': [2, 3, 4, 5, 6, 7], 'G2': [8, 9], 'G3': [10, 11],
+    'G4': [12, 13, 14, 15], 'D_O': 16, 'D_P': 17, 'D_E': 18,
+    'D_EX': 19, 'D_D': 20, 'D_R': 21, 'TRI': 22, 'TRE': 23
 }
 MAPA_COLUNAS_LD = {
-    'OK': 24, 
-    'G1': [25, 26, 27, 28, 29, 30],
-    'G2': [31, 32],
-    'G3': [33, 34],
-    'G4': [35, 36, 37, 38],
-    'D_O': 39, 'D_P': 40, 'D_E': 41,
-    'D_EX': 42,
-    'D_D': 43,
-    'D_R': 44,
-    'TRI': 45, 'TRE': 46
+    'OK': 24, 'G1': [25, 26, 27, 28, 29, 30], 'G2': [31, 32], 'G3': [33, 34],
+    'G4': [35, 36, 37, 38], 'D_O': 39, 'D_P': 40, 'D_E': 41,
+    'D_EX': 42, 'D_D': 43, 'D_R': 44, 'TRI': 45, 'TRE': 46
 }
 
 DEFEITOS_AGRUPADOS = ['G1', 'G2', 'G3', 'G4']
 DEFEITOS_INDIVIDUAIS = ['D_O', 'D_P', 'D_E', 'D_EX', 'D_D', 'D_R']
+TODOS_DEFEITOS_CHAVES = DEFEITOS_AGRUPADOS + DEFEITOS_INDIVIDUAIS
 
 # --- 2. FUNÇÕES "AJUDANTES" ---
 def normalizar_valor(valor):
-    """Lê o valor da célula. Retorna 0 para vazio, ou o valor numérico."""
-    if isinstance(valor, (int, float)):
-        return float(valor)
-    if not isinstance(valor, str):
-        return 0.0 
+    if isinstance(valor, (int, float)): return float(valor)
+    if not isinstance(valor, str): return 0.0
     valor = valor.strip()
-    if valor == "":
-        return 0.0
+    if valor == "": return 0.0
     valor = valor.replace(",", ".")
     try:
-        return float(valor)
+        val_float = float(valor)
+        return val_float
     except ValueError:
         return 1.0 
 
 def normalizar_binario(valor):
-    """Converte um valor normalizado em 1 (se > 0) ou 0."""
     return 1 if normalizar_valor(valor) > 0 else 0
 
 def calcular_variancia_2p(a, b):
-    """Cálculo da variância amostral para 2 pontos, como você pediu."""
-    if a == 0 or b == 0:
-        return 0.0 
-
-    media = (a + b) / 2
-    var = ((a - media)**2 + (b - media)**2) / 1 
+    if a == 0 or b == 0: return 0.0
+    # Variância amostral (n-1) para 2 pontos.
+    var = ((a - b) ** 2) / 2
     return var
 
+# --- 3. O "CÉREBRO" (Etapa 3 / Passo 5) ---
 def processar_planilha_pro006(caminho_arquivo, linha_dados_str, tipo_pista):
-    """O "Cérebro" do PRO-006: Lógica binária e inventário alternado."""
     conn = sqlite3.connect('projeto_pro006.db')
     try:
         cursor = conn.cursor()
@@ -94,60 +73,43 @@ def processar_planilha_pro006(caminho_arquivo, linha_dados_str, tipo_pista):
 
         print(f"Iniciando processamento PRO-006. Tipo: {tipo_pista}. Lendo a partir da linha {linha_dados_str}.")
 
-        estaca_index = 0 
-        lista_de_sql_data = [] 
+        estaca_index = 0
+        lista_de_sql_data = []
 
         for _, row in df.iterrows():
             estaca_index += 1
-
             km = row.get(COLUNA_KM)
-            if pd.isna(km) or str(km).strip() == "":
-                continue 
-
+            if pd.isna(km) or str(km).strip() == "": continue
             km_val = normalizar_valor(km)
             km_segmento = math.floor(km_val)
 
-            # Inicializa a "ficha binária" para esta estaca
             sql_data = {
-                'km': km_val,
-                'km_segmento': km_segmento,
-                'tipo_pista': tipo_pista,
-                'foi_inventariada': 0,
-                'g1': 0, 'g2': 0, 'g3': 0, 'g4': 0,
+                'km': km_val, 'km_segmento': km_segmento, 'tipo_pista': tipo_pista,
+                'foi_inventariada': 0, 'g1': 0, 'g2': 0, 'g3': 0, 'g4': 0,
                 'd_o': 0, 'd_p': 0, 'd_e': 0, 'd_ex': 0, 'd_d': 0, 'd_r': 0,
-                'fch_media_estaca': 0.0,
-                'fch_var_estaca': 0.0
+                'fch_media_estaca': 0.0, 'fch_var_estaca': 0.0
             }
 
-            # --- 3. LÓGICA DE INVENTÁRIO (Sua regra) ---
             is_odd = (estaca_index % 2 != 0)
             mapa_defeitos = None
 
             if tipo_pista == 'terceira_faixa':
-                if is_odd: 
+                if is_odd:
                     sql_data['foi_inventariada'] = 1
-                    mapa_defeitos = MAPA_COLUNAS_LE 
+                    mapa_defeitos = MAPA_COLUNAS_LE
 
             elif tipo_pista == 'simples' or tipo_pista == 'dupla':
                 sql_data['foi_inventariada'] = 1
-                if is_odd: 
-                    mapa_defeitos = MAPA_COLUNAS_LD 
-                else: 
-                    mapa_defeitos = MAPA_COLUNAS_LE 
+                mapa_defeitos = MAPA_COLUNAS_LD if is_odd else MAPA_COLUNAS_LE
 
-            # --- 4. CÁLCULO (Se a estaca for inventariada) ---
             if sql_data['foi_inventariada'] == 1 and mapa_defeitos:
-
                 for grupo in DEFEITOS_AGRUPADOS:
                     for col_idx in mapa_defeitos[grupo]:
                         if normalizar_binario(row.get(col_idx)) == 1:
-                            sql_data[grupo] = 1
-                            break 
+                            sql_data[grupo] = 1; break
 
-                if sql_data['g3'] == 1:
-                    sql_data['g1'] = 0; sql_data['g2'] = 0
-                elif sql_data['g2'] == 1:
-                    sql_data['g1'] = 0
+                if sql_data['g3'] == 1: sql_data['g1'] = 0; sql_data['g2'] = 0
+                elif sql_data['g2'] == 1: sql_data['g1'] = 0
 
                 for defeito in DEFEITOS_INDIVIDUAIS:
                     col_idx = mapa_defeitos[defeito]
@@ -155,20 +117,16 @@ def processar_planilha_pro006(caminho_arquivo, linha_dados_str, tipo_pista):
 
                 tri = normalizar_valor(row.get(mapa_defeitos['TRI']))
                 tre = normalizar_valor(row.get(mapa_defeitos['TRE']))
-
                 sql_data['fch_media_estaca'] = (tri + tre) / 2
                 sql_data['fch_var_estaca'] = calcular_variancia_2p(tri, tre)
 
             lista_de_sql_data.append(sql_data)
 
-        # Fim do "Grande Loop"
-
         # --- 5. INSERIR TUDO NO BANCO DE DADOS ---
         print(f"Processamento concluído. Inserindo {len(lista_de_sql_data)} estacas no banco...")
 
         cursor.execute("PRAGMA table_info(estacas)")
-        colunas_db = [info[1] for info in cursor.fetchall() if info[1] != 'id'] # Pega nomes, exceto 'id'
-
+        colunas_db = [info[1] for info in cursor.fetchall() if info[1] != 'id']
         placeholders = ', '.join(['?' for _ in colunas_db])
         nomes_colunas = ', '.join(colunas_db)
         sql_query = f"INSERT INTO estacas ({nomes_colunas}) VALUES ({placeholders})"
@@ -179,51 +137,167 @@ def processar_planilha_pro006(caminho_arquivo, linha_dados_str, tipo_pista):
             lista_de_valores.append(tuple(valores_estaca))
 
         cursor.executemany(sql_query, lista_de_valores)
-        print("Inserção em massa concluída.")
+
+        # Limpeza de NULLs
+        colunas_para_limpar = [col for col in colunas_db if col not in ['km', 'km_segmento', 'tipo_pista']]
+        for col in colunas_para_limpar:
+            cursor.execute(f"UPDATE estacas SET {col} = 0.0 WHERE {col} IS NULL")
 
         conn.commit()
         conn.close()
 
-        print("RODANDO VERSÃO PRO-006 (Cérebro).")
+        print("Cérebro PRO-006 (V5) concluído. Banco de dados populado.")
         return True, None
 
     except Exception as e:
         print(f"ERRO NO PROCESSAMENTO PRO-006: {e}")
         traceback.print_exc()
-        if conn:
-            conn.rollback()
-            conn.close()
+        if conn: conn.rollback(); conn.close()
         return False, str(e)
 
 
-# --- 3. ROTAS FLASK ---
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-@app.route('/upload', methods=['POST'])
-def upload_file():
-    if 'planilha' not in request.files: return "Nenhum arquivo encontrado!"
-    file = request.files['planilha']
-    if file.filename == '': return "Nenhum arquivo selecionado!"
-
-    linha_inicial = request.form['linha_inicial']
-    tipo_pista = request.form['tipo_pista'] 
-
-    if file:
-        caminho_seguro = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-        file.save(caminho_seguro)
-
-        sucesso, erro = processar_planilha_pro006(caminho_seguro, linha_inicial, tipo_pista)
-
-        if sucesso:
-            return redirect(url_for('relatorio'))
-        else:
-            return f"Erro: {erro}"
-
+# --- 4. ROTA DE RELATÓRIO (Etapa 4 / Passo 6) ---
+# ESTA É A FUNÇÃO ATUALIZADA
 @app.route('/relatorio')
 def relatorio():
-    return "Processamento Concluído! O relatório PRO-006 será exibido aqui."
+    conn = None
+    try:
+        conn = sqlite3.connect('projeto_pro006.db')
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
 
+        # --- 1. DADOS PARA O GRÁFICO 1 (Linear de Ocorrência) ---
+        # Vamos plotar o IGI das estacas. Mas o PRO-006 não calcula IGI por estaca...
+        # Vamos plotar a FCH_Media_Estaca, que é um bom indicador por estaca.
+        cursor.execute("SELECT km, fch_media_estaca FROM estacas WHERE foi_inventariada = 1 ORDER BY km")
+        estacas = cursor.fetchall()
+
+        x_km = [row['km'] for row in estacas]
+        y_fch = [row['fch_media_estaca'] for row in estacas]
+
+        fig1 = go.Figure()
+        fig1.add_trace(go.Scatter(x=x_km, y=y_fch, mode='lines+markers', name='Média Flechas (FCH)'))
+
+        fig1.update_layout(
+            title="Linear de Ocorrência (Média FCH por Estaca Inventariada)",
+            xaxis_title="Quilômetro (km)",
+            yaxis_title="Média FCH (mm)",
+            hovermode="x unified"
+        )
+        graphJSON1 = json.dumps(fig1, cls=plotly.utils.PlotlyJSONEncoder)
+
+        # --- 2. CÁLCULO DO IGG POR SEGMENTO (Sua Lógica PRO-006) ---
+
+        # 2.1. Monta a string da consulta SQL para os defeitos
+        select_defeitos = ", ".join([f"SUM({chave.lower()}) as f_abs_{chave.lower()}" for chave in TODOS_DEFEITOS_CHAVES])
+
+        query_segmentos = f"""
+            SELECT 
+                km_segmento,
+                SUM(foi_inventariada) as N,
+                AVG(fch_media_estaca) as media_fch,
+                AVG(fch_var_estaca) as media_var,
+                MIN(km) as km_inicio,
+                MAX(km) + 0.020 as km_fim_corrigido,
+                {select_defeitos}
+            FROM estacas
+            WHERE foi_inventariada = 1
+            GROUP BY km_segmento
+            ORDER BY km_segmento
+        """
+        cursor.execute(query_segmentos)
+        segmentos_db = cursor.fetchall()
+        conn.close() # Fechamos o DB, o resto é Python
+
+        # --- 2.2. Loop em Python para calcular o IGG Final ---
+        segmentos_finais = [] # Lista para a tabela HTML
+        igg_para_grafico_2 = [] # Lista para o Gráfico 2
+
+        for row in segmentos_db:
+            N = row['N']
+            if N == 0:
+                continue # Pula segmentos sem estacas inventariadas
+
+            igg_defeitos_total = 0.0
+
+            # Loop pelos DEFEITOS (G1-G8)
+            for chave in TODOS_DEFEITOS_CHAVES:
+                chave_sql = f"f_abs_{chave.lower()}"
+                f_abs = row[chave_sql]
+                f_r = (f_abs * 100) / N
+
+                # Usa a chave correta para o Fator de Ponderação
+                fp_chave = chave.upper()
+                fp = FATORES_PONDERACAO[fp_chave]
+
+                igi = f_r * fp
+                igg_defeitos_total += igi
+
+            # --- 2.3. Lógica das Flechas (PRO-006) ---
+            media_fch = row['media_fch']
+            media_var = row['media_var']
+
+            # Regra 1 (Média)
+            igi_trilha = 0.0
+            if media_fch <= 30:
+                igi_trilha = media_fch * (4/3)
+            else:
+                igi_trilha = 40.0
+
+            # Regra 2 (Variância)
+            igi_flecha_final = igi_trilha # Começa com o valor da Regra 1
+            if media_var > 50:
+                igi_flecha_final = 50.0 # Regra 2 sobrescreve
+
+            # --- 2.4. O IGG FINAL (SOMA) ---
+            igg_final_segmento = igg_defeitos_total + igi_flecha_final
+
+            # Guarda os resultados
+            segmentos_finais.append({
+                'km_segmento': row['km_segmento'],
+                'km_inicio': row['km_inicio'],
+                'km_fim_corrigido': row['km_fim_corrigido'],
+                'igg_soma': igg_final_segmento # O IGG Final
+            })
+
+            igg_para_grafico_2.append(igg_final_segmento)
+
+        # --- 3. GRÁFICO 2 (IGG por Segmento) ---
+        x_segmento = [f"km {int(row['km_segmento'])}" for row in segmentos_finais]
+        y_igg_soma = igg_para_grafico_2
+
+        fig2 = go.Figure()
+        fig2.add_trace(go.Scatter(x=x_segmento, y=y_igg_soma, mode='lines+markers', name='IGG por Segmento'))
+
+        y_max_soma = max(y_igg_soma) if y_igg_soma else 160
+
+        # Faixas de "Conceito"
+        fig2.add_hrect(y0=0, y1=20, line_width=0, fillcolor='green', opacity=0.1, layer="below", annotation_text="Ótimo", annotation_position="right")
+        fig2.add_hrect(y0=20, y1=40, line_width=0, fillcolor='yellow', opacity=0.1, layer="below", annotation_text="Bom", annotation_position="right")
+        fig2.add_hrect(y0=40, y1=80, line_width=0, fillcolor='orange', opacity=0.1, layer="below", annotation_text="Regular", annotation_position="right")
+        fig2.add_hrect(y0=80, y1=160, line_width=0, fillcolor='red', opacity=0.1, layer="below", annotation_text="Ruim", annotation_position="right")
+        fig2.add_hrect(y0=160, y1=max(161, y_max_soma + 50), line_width=0, fillcolor='maroon', opacity=0.1, layer="below", annotation_text="Péssimo", annotation_position="right")
+
+        fig2.update_layout(
+            title="IGG por Segmento (Soma dos IGIs - PRO-006)",
+            xaxis_title="Segmento de 1km",
+            yaxis_title="IGG (ΣIGI)",
+            hovermode="x unified"
+        )
+        graphJSON2 = json.dumps(fig2, cls=plotly.utils.PlotlyJSONEncoder)
+
+        # Envia tudo para o template
+        return render_template('relatorio.html', 
+                               graphJSON=graphJSON1, 
+                               graphJSON2=graphJSON2, 
+                               segmentos=segmentos_finais)
+
+    except Exception as e:
+        if conn: conn.close()
+        print(f"Erro ao gerar relatório PRO-006: {e}")
+        traceback.print_exc()
+        return "Erro ao gerar relatório. Verifique os dados no banco."
+
+# --- 5. ROTA DE INICIALIZAÇÃO ---
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
