@@ -27,16 +27,25 @@
         </div>
 
         <div>
-            <label for="tipo_pista">2. Qual o tipo de pista?</label>
+            <label for="modo_calculo">2. Qual o modo de cálculo?</label>
+            <select name="modo_calculo" id="modo_calculo" required>
+                <option value="intercalado">Intercalado (PRO-006 Padrão)</option>
+                <option value="somado">Somado (LE + LD em todas as estacas)</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="tipo_pista">3. Qual o tipo de inventário?</label>
             <select name="tipo_pista" id="tipo_pista" required>
                 <option value="simples">Pista Simples (Alternado LE/LD)</option>
                 <option value="dupla">Pista Dupla (Alternado LE/LD)</option>
                 <option value="terceira_faixa">Terceira Faixa (LE, pulando estacas)</option>
             </select>
+            <small>Nota: Se 'Modo de Cálculo' for 'Somado', esta opção é ignorada.</small>
         </div>
 
         <div>
-            <label for="linha_inicial">3. Em qual linha começam os dados?</label>
+            <label for="linha_inicial">4. Em qual linha começam os dados?</label>
             <input type="number" name="linha_inicial" id="linha_inicial" placeholder="Ex: 8" value="8" min="1" required>
         </div>
 
