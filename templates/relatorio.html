@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-br"><head><meta charset="UTF-8">...</head>
+<body>
+    <div class="container">
+        <h1>Relatório de Análise IGG (PRO-006)</h1>
+        <h2>Linear de Ocorrência (IGI por Estaca)</h2>
+        <div id="graficoDiv1" class="grafico"></div>
+        <hr>
+        <h2>IGG por Segmento (Soma)</h2>
+        <div id="graficoDiv2" class="grafico"></div>
+        <hr>
+        <h2>Resumo por Segmento (km)</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Segmento (km)</th>
+                    <th>Trecho Início</th>
+                    <th>Trecho Fim (Corrigido)</th>
+                    <th>IGG (Soma)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for segmento in segmentos %}
+                <tr>
+                    <td>{{ segmento.km_segmento }}</td>
+                    <td>{{ "%.3f"|format(segmento.km_inicio) }}</td>
+                    <td>{{ "%.3f"|format(segmento.km_fim_corrigido) }}</td>
+                    <td>{{ "%.2f"|format(segmento.igg_soma) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script>
+        var graphJSON1 = {{ graphJSON | safe }};
+        Plotly.newPlot('graficoDiv1', graphJSON1.data, graphJSON1.layout);
+        var graphJSON2 = {{ graphJSON2 | safe }};
+        Plotly.newPlot('graficoDiv2', graphJSON2.data, graphJSON2.layout);
+    </script>
+</body>
+</html>
