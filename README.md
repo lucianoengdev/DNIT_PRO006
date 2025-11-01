@@ -47,7 +47,8 @@ As of November 01, 2025, the project is in the development phase.
 [x] Step 6: Report and visualization generation (Done)
 
 Known Issues and Future Improvements
-* This project serves as a robust foundation. After submission, I plan to expand its capabilities with the following features:
+This project serves as a robust foundation. After submission, I plan to expand its capabilities with the following features:
+
 * Exportable Calculation Sheets: Generate and export a detailed "calculation sheet" for each segment, matching the official format required by the standard.
 * Homogeneous Segments: Add an option for the user to define custom homogeneous segments (e.g., based on pavement type or construction date) instead of using the default 1km segments.
 * Email Reports: Implement a feature to ask for the user's email and send the complete report (with graphs and data) as an attachment.
