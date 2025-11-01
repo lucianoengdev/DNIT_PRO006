@@ -4,7 +4,6 @@ conn = sqlite3.connect('projeto_pro006.db')
 cursor = conn.cursor()
 cursor.execute('DROP TABLE IF EXISTS estacas')
 
-# Cria a nova tabela (V6) com G4 dividido e G5 individual
 cursor.execute('''
 CREATE TABLE estacas (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,6 +37,3 @@ CREATE TABLE estacas (
 
 conn.commit()
 conn.close()
-
-print("Banco de dados 'projeto_pro006.db' (V6) criado com sucesso!")
-print("Tabela 'estacas' atualizada com G4a/G4b e O/P/E individuais.")

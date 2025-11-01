@@ -13,7 +13,7 @@ app = Flask(__name__)
 UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'uploads')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# --- CONSTANTES PRO-006 (Corrigidas V2) ---
+# --- CONSTANTES PRO-006 ---
 FATORES_PONDERACAO = {
     'G1': 0.2, 'G2': 0.5, 'G3': 0.8,
     'G4A': 0.9, 'G4B': 0.9,
@@ -21,7 +21,7 @@ FATORES_PONDERACAO = {
     'D_EX': 0.5, 'D_D': 0.3, 'D_R': 0.6
 }
 
-# --- MAPEAMENTO DE COLUNAS (Corrigido V2) ---
+# --- MAPEAMENTO DE COLUNAS ---
 COLUNA_KM = 0
 MAPA_COLUNAS_LE = {
     'OK': 1, 'G1': [2, 3, 4, 5, 6, 7], 'G2': [8, 9], 'G3': [10, 11],
@@ -68,7 +68,7 @@ def get_conceito(igg):
     if igg > 0: return "Ótimo"
     return "-"
 
-# --- 3. O "CÉREBRO" (V8 - Correto e Final) ---
+# --- 3. O "CÉREBRO" ---
 def processar_planilha_pro006(caminho_arquivo, linha_dados_str, tipo_pista, modo_calculo):
     conn = sqlite3.connect('projeto_pro006.db')
     try:
@@ -166,7 +166,7 @@ def processar_planilha_pro006(caminho_arquivo, linha_dados_str, tipo_pista, modo
         if conn: conn.rollback(); conn.close()
         return False, str(e)
 
-# --- 4. ROTA DE RELATÓRIO (V10 - Final) ---
+# --- 4. ROTA DE RELATÓRIO ---
 @app.route('/relatorio')
 def relatorio():
     conn = None
@@ -175,7 +175,7 @@ def relatorio():
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
 
-        # --- 1. GRÁFICO 1 (FCH) - RESTAURADO ---
+        # --- 1. GRÁFICO 1 (FCH) ---
         cursor.execute("SELECT km, fch_media_estaca FROM estacas WHERE foi_inventariada = 1 ORDER BY km")
         estacas = cursor.fetchall()
         x_km = [row['km'] for row in estacas]; y_fch = [row['fch_media_estaca'] for row in estacas]
@@ -265,14 +265,12 @@ def relatorio():
 
         y_max_soma = max(y_igg_soma) if y_igg_soma else 160
 
-        # Faixas de "Conceito"
         fig2.add_hrect(y0=0, y1=20, line_width=0, fillcolor='green', opacity=0.1, layer="below", annotation_text="Ótimo", annotation_position="right")
         fig2.add_hrect(y0=20, y1=40, line_width=0, fillcolor='yellow', opacity=0.1, layer="below", annotation_text="Bom", annotation_position="right")
         fig2.add_hrect(y0=40, y1=80, line_width=0, fillcolor='orange', opacity=0.1, layer="below", annotation_text="Regular", annotation_position="right")
         fig2.add_hrect(y0=80, y1=160, line_width=0, fillcolor='red', opacity=0.1, layer="below", annotation_text="Ruim", annotation_position="right")
         fig2.add_hrect(y0=160, y1=max(161, y_max_soma + 50), line_width=0, fillcolor='maroon', opacity=0.1, layer="below", annotation_text="Péssimo", annotation_position="right")
 
-        # --- (A CORREÇÃO DO EIXO Y) ---
         fig2.update_layout(
             title="IGG por Segmento (Soma dos IGIs - PRO-006)",
             xaxis_title="Segmento de 1km",
@@ -280,15 +278,15 @@ def relatorio():
             hovermode="x unified",
             yaxis=dict(
                 tickmode='array',
-                tickvals=[0, 20, 40, 80, 160], # Seus "ticks" desejados
-                range=[0, max(170, y_max_soma + 20)] # Garante que 160 apareça e expande se for maior
+                tickvals=[0, 20, 40, 80, 160], 
+                range=[0, max(170, y_max_soma + 20)] 
             )
         )
         graphJSON_IGG = json.dumps(fig2, cls=plotly.utils.PlotlyJSONEncoder)
 
         return render_template('relatorio.html', 
-                               graphJSON_FCH=graphJSON_FCH, # Passa o Gráfico 1 (FCH)
-                               graphJSON_IGG=graphJSON_IGG, # Passa o Gráfico 2 (IGG)
+                               graphJSON_FCH=graphJSON_FCH,
+                               graphJSON_IGG=graphJSON_IGG,
                                segmentos=segmentos_resumo,
                                memoria=memoria_de_calculo)
 
