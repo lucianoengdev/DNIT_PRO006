@@ -10,26 +10,21 @@
         h1, h2 { color: #333; }
         .grafico { width: 100%; height: 500px; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; table-layout: fixed; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; word-wrap: break-word; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; word-wrap: break-word; font-size: 0.9em; }
         th { background-color: #f2f2f2; }
         tr:nth-child(even) { background-color: #fafafa; }
-        .container { max-width: 1400px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .container { max-width: 1600px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         hr { margin: 40px 0; border: 0; border-top: 1px solid #eee; }
-        .tabela-memoria { width: 2000px; } /* Tabela larga */
-        .scroll-container { width: 100%; overflow-x: auto; } /* Container de scroll */
+        .tabela-memoria { width: 3000px; } /* Tabela BEM larga */
+        .scroll-container { width: 100%; overflow-x: auto; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Relatório de Análise IGG (PRO-006)</h1>
 
-        <h2>Linear de Ocorrência (IGI por Estaca)</h2>
-        <div id="graficoDiv1" class="grafico"></div>
-        <hr>
-
-        <h2>IGG por Segmento (Soma)</h2>
-        <div id="graficoDiv2" class="grafico"></div>
-        <hr>
+        <div id="graficoDiv1" class="grafico"></div><hr>
+        <div id="graficoDiv2" class="grafico"></div><hr>
 
         <h2>Resumo por Segmento (km)</h2>
         <table>
@@ -56,37 +51,23 @@
         <hr>
 
         <h2>Memória de Cálculo (para Validação)</h2>
-        <p>Tabela detalhada mostrando os valores intermediários usados para calcular o IGG de cada segmento.</p>
         <div class="scroll-container">
             <table class="tabela-memoria">
                 <thead>
                     <tr>
                         <th>Km</th>
-                        <th>N (Estacas)</th>
-                        <th>f_abs_g1</th>
-                        <th>f_r_g1</th>
-                        <th>IGI_G1</th>
-                        <th>f_abs_g2</th>
-                        <th>f_r_g2</th>
-                        <th>IGI_G2</th>
-                        <th>f_abs_g3</th>
-                        <th>f_r_g3</th>
-                        <th>IGI_G3</th>
-                        <th>f_abs_g4</th>
-                        <th>f_r_g4</th>
-                        <th>IGI_G4</th>
-                        <th>f_abs_g5</th>
-                        <th>f_r_g5</th>
-                        <th>IGI_G5</th>
-                        <th>f_abs_d_ex</th>
-                        <th>f_r_d_ex</th>
-                        <th>IGI_D_EX</th>
-                        <th>f_abs_d_d</th>
-                        <th>f_r_d_d</th>
-                        <th>IGI_D_D</th>
-                        <th>f_abs_d_r</th>
-                        <th>f_r_d_r</th>
-                        <th>IGI_D_R</th>
+                        <th>N</th>
+                        <th>f_abs_g1</th><th>f_r_g1</th><th>IGI_G1</th>
+                        <th>f_abs_g2</th><th>f_r_g2</th><th>IGI_G2</th>
+                        <th>f_abs_g3</th><th>f_r_g3</th><th>IGI_G3</th>
+                        <th>f_abs_g4a</th><th>f_r_g4a</th><th>IGI_G4A</th>
+                        <th>f_abs_g4b</th><th>f_r_g4b</th><th>IGI_G4B</th>
+                        <th>f_abs_d_o</th><th>f_r_d_o</th><th>IGI_D_O</th>
+                        <th>f_abs_d_p</th><th>f_r_d_p</th><th>IGI_D_P</th>
+                        <th>f_abs_d_e</th><th>f_r_d_e</th><th>IGI_D_E</th>
+                        <th>f_abs_d_ex</th><th>f_r_d_ex</th><th>IGI_D_EX</th>
+                        <th>f_abs_d_d</th><th>f_r_d_d</th><th>IGI_D_D</th>
+                        <th>f_abs_d_r</th><th>f_r_d_r</th><th>IGI_D_R</th>
                         <th>Média_FCH</th>
                         <th>Média_Var</th>
                         <th>IGI_Trilha</th>
@@ -108,12 +89,21 @@
                         <td>{{ seg.f_abs_g3 }}</td>
                         <td>{{ "%.2f"|format(seg.f_r_g3) }}</td>
                         <td>{{ "%.2f"|format(seg.igi_g3) }}</td>
-                        <td>{{ seg.f_abs_g4 }}</td>
-                        <td>{{ "%.2f"|format(seg.f_r_g4) }}</td>
-                        <td>{{ "%.2f"|format(seg.igi_g4) }}</td>
-                        <td>{{ seg.f_abs_g5 }}</td>
-                        <td>{{ "%.2f"|format(seg.f_r_g5) }}</td>
-                        <td>{{ "%.2f"|format(seg.igi_g5) }}</td>
+                        <td>{{ seg.f_abs_g4a }}</td>
+                        <td>{{ "%.2f"|format(seg.f_r_g4a) }}</td>
+                        <td>{{ "%.2f"|format(seg.igi_g4a) }}</td>
+                        <td>{{ seg.f_abs_g4b }}</td>
+                        <td>{{ "%.2f"|format(seg.f_r_g4b) }}</td>
+                        <td>{{ "%.2f"|format(seg.igi_g4b) }}</td>
+                        <td>{{ seg.f_abs_d_o }}</td>
+                        <td>{{ "%.2f"|format(seg.f_r_d_o) }}</td>
+                        <td>{{ "%.2f"|format(seg.igi_d_o) }}</td>
+                        <td>{{ seg.f_abs_d_p }}</td>
+                        <td>{{ "%.2f"|format(seg.f_r_d_p) }}</td>
+                        <td>{{ "%.2f"|format(seg.igi_d_p) }}</td>
+                        <td>{{ seg.f_abs_d_e }}</td>
+                        <td>{{ "%.2f"|format(seg.f_r_d_e) }}</td>
+                        <td>{{ "%.2f"|format(seg.igi_d_e) }}</td>
                         <td>{{ seg.f_abs_d_ex }}</td>
                         <td>{{ "%.2f"|format(seg.f_r_d_ex) }}</td>
                         <td>{{ "%.2f"|format(seg.igi_d_ex) }}</td>
@@ -139,9 +129,8 @@
     <script>
         var graphJSON1 = {{ graphJSON | safe }};
         Plotly.newPlot('graficoDiv1', graphJSON1.data, graphJSON1.layout);
-
         var graphJSON2 = {{ graphJSON2 | safe }};
-        Plotly.newPlot('graficoDiv2', graphJSON2.data, graphJSON2.layout);
+        PlotSly.newPlot('graficoDiv2', graphJSON2.data, graphJSON2.layout);
     </script>
 </body>
 </html>
