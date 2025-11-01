@@ -220,16 +220,13 @@ def relatorio():
         graphJSON1 = json.dumps(fig1, cls=plotly.utils.PlotlyJSONEncoder)
 
         # --- 2. CÁLCULO DO IGG POR SEGMENTO ---
-        # CORREÇÃO: As chaves de defeito agora incluem G5
         defeitos_sql = TODOS_DEFEITOS_CHAVES
         select_defeitos = ", ".join([f"SUM({chave.lower()}) as f_abs_{chave.lower()}" for chave in defeitos_sql])
 
         query_segmentos = f"""
             SELECT 
                 km_segmento,
-                tipo_pista,
-                modo_calculo,
-                SUM(foi_inventariada) as N,
+                SUM(foi_inventariada) as N, -- Esta é a contagem REAL
                 AVG(fch_media_estaca) as media_fch,
                 AVG(fch_var_estaca) as media_var,
                 MIN(km) as km_inicio,
@@ -244,36 +241,40 @@ def relatorio():
         segmentos_db = cursor.fetchall()
         conn.close()
 
-        segmentos_finais = []
+        # Listas para guardar os resultados
+        segmentos_resumo = [] # Para a tabela-resumo
         igg_para_grafico_2 = []
+        memoria_de_calculo = [] # <-- A MEMÓRIA QUE VOCÊ PEDIU
 
         for row in segmentos_db:
+            # --- CORREÇÃO DO BUG DO 'N' ---
+            # N agora é a contagem real de estacas inventariadas no segmento
             N = row['N']
             if N == 0: continue
 
-            # --- Cálculo de N (DENOMINADOR) ---
-            # Esta é a lógica crucial que suspeitávamos
-            n_calculo = N # Padrão
-            if row['modo_calculo'] == 'intercalado':
-                if row['tipo_pista'] == 'terceira_faixa':
-                    n_calculo = 25
-                else:
-                    n_calculo = 50
-            elif row['modo_calculo'] == 'somado':
-                n_calculo = 50
+            # Dicionário para guardar os detalhes deste segmento
+            detalhes = {'km_segmento': row['km_segmento'], 'N': N}
 
             igg_defeitos_total = 0.0
 
+            # Loop pelos DEFEITOS (G1-G5, D_EX, D_D, D_R)
             for chave in TODOS_DEFEITOS_CHAVES:
                 chave_sql = f"f_abs_{chave.lower()}"
-                f_abs = row[chave_sql]
-                f_r = (f_abs * 100) / n_calculo # Usa o N corrigido
-
                 fp_chave = chave.upper()
+
+                f_abs = row[chave_sql]
+                f_r = (f_abs * 100) / N
                 fp = FATORES_PONDERACAO[fp_chave]
                 igi = f_r * fp
+
                 igg_defeitos_total += igi
 
+                # Salva na memória de cálculo
+                detalhes[f'f_abs_{chave.lower()}'] = f_abs
+                detalhes[f'f_r_{chave.lower()}'] = f_r
+                detalhes[f'igi_{chave.lower()}'] = igi
+
+            # --- Lógica das Flechas ---
             media_fch = row['media_fch']
             media_var = row['media_var']
 
@@ -287,18 +288,28 @@ def relatorio():
             if media_var > 50:
                 igi_flecha_final = 50.0
 
-            igg_final_segmento = igg_defeitos_total + igi_flecha_final
+            # Salva na memória de cálculo
+            detalhes['media_fch'] = media_fch
+            detalhes['media_var'] = media_var
+            detalhes['igi_trilha'] = igi_trilha
+            detalhes['igi_flecha_final'] = igi_flecha_final
 
-            segmentos_finais.append({
+            # --- O IGG FINAL (SOMA) ---
+            igg_final_segmento = igg_defeitos_total + igi_flecha_final
+            detalhes['igg_final'] = igg_final_segmento
+
+            # Guarda os resultados
+            segmentos_resumo.append({
                 'km_segmento': row['km_segmento'],
                 'km_inicio': row['km_inicio'],
                 'km_fim_corrigido': row['km_fim_corrigido'],
                 'igg_soma': igg_final_segmento
             })
             igg_para_grafico_2.append(igg_final_segmento)
+            memoria_de_calculo.append(detalhes) # Adiciona tudo à memória
 
         # --- 3. GRÁFICO 2 (IGG por Segmento) ---
-        x_segmento = [f"km {int(row['km_segmento'])}" for row in segmentos_finais]
+        x_segmento = [f"km {int(row['km_segmento'])}" for row in segmentos_resumo]
         y_igg_soma = igg_para_grafico_2
         fig2 = go.Figure()
         fig2.add_trace(go.Scatter(x=x_segmento, y=y_igg_soma, mode='lines+markers', name='IGG por Segmento'))
@@ -313,18 +324,21 @@ def relatorio():
                            xaxis_title="Segmento de 1km", yaxis_title="IGG (ΣIGI)", hovermode="x unified")
         graphJSON2 = json.dumps(fig2, cls=plotly.utils.PlotlyJSONEncoder)
 
+        # Envia tudo para o template (incluindo a MEMÓRIA)
         return render_template('relatorio.html', 
                                graphJSON=graphJSON1, 
                                graphJSON2=graphJSON2, 
-                               segmentos=segmentos_finais)
+                               segmentos=segmentos_resumo,
+                               memoria=memoria_de_calculo) # <-- A NOVA VARIÁVEL
 
     except Exception as e:
         if conn: conn.close()
         print(f"Erro ao gerar relatório PRO-006: {e}")
         traceback.print_exc()
-        return "Erro ao gerar relatório. Verifique os dados no banco."
+        return "Erro ao gerar relatório. Verifique os dados no banco."# --- 5. ROTA DE INICIALIZAÇÃO ---
+    
 
-# --- 5. ROTA DE INICIALIZAÇÃO ---
+    
 @app.route('/')
 def index():
     return render_template('index.html')
