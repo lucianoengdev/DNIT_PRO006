@@ -1,5 +1,5 @@
 # DNIT_PRO006
-#### Video Demo:  <(https://www.youtube.com/watch?v=HdbR0okTD2o)>
+#### Video Demo:  <[Click here](https://www.youtube.com/watch?v=HdbR0okTD2o)>
 #### Description:
 
 Pavement Severity Index (IGG) Calculator (DNIT PRO-006)
