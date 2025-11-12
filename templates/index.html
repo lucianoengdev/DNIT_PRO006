@@ -4,132 +4,182 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculadora IGG (PRO-006)</title>
-<style>
-    body { 
-        font-family: sans-serif; 
-        margin: 0; 
-        padding: 2em; 
-        background-color: #f4f4f4; 
-    }
-    .container {
-        display: flex;
-        gap: 2em; 
-        max-width: 1600px;
-        margin: 0 auto; 
-    }
-    h1, h2 { 
-        color: #333; 
-        width: 100%; 
-        text-align: center; 
-        margin-bottom: 1em;
-    }
+    <style>
+        body { 
+            font-family: sans-serif; 
+            margin: 0; 
+            padding: 2em;
+            background-color: #f4f4f4; 
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap; 
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        h1 { 
+            color: #333; 
+            width: 100%; 
+            text-align: center; 
+            margin-bottom: 1em;
+        }
 
-    /* Coluna do Formulário */
-    .form-column {
-        flex: 1; 
-        min-width: 450px; 
-    }
-    form { 
-        border: 1px solid #ccc; 
-        padding: 25px; 
-        border-radius: 8px; 
-        background: #fff; 
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
-    }
-    div { margin-bottom: 20px; }
-    label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 1.1em; }
-    input[type="file"], input[type="number"], select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; }
-    input[type="submit"] { background-color: #0d6efd; color: white; padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 1.1em; width: 100%; }
-    input[type="submit"]:hover { background-color: #0b5ed7; }
+        .form-column {
+            flex: 1; 
+            min-width: 450px;
+        }
+        form { 
+            border: 1px solid #ccc; 
+            padding: 25px; 
+            border-radius: 8px; 
+            background: #fff; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+        }
+        div { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 1.1em; }
+        input[type="file"], input[type="number"], select, textarea { 
+            width: 100%; 
+            padding: 10px; 
+            box-sizing: border-box; 
+            border: 1px solid #ddd; 
+            border-radius: 4px; 
+            font-family: sans-serif; 
+        }
+        textarea {
+            height: 150px; 
+            resize: vertical;
+        }
+        input[type="submit"] { 
+            background-color: #0d6efd; 
+            color: white; 
+            padding: 12px 20px; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 1.1em; 
+            width: 100%; 
+        }
+        input[type="submit"]:hover { background-color: #0b5ed7; }
+        .warning-text {
+            font-size: 0.9em;
+            color: #666;
+        }
 
-    /* Coluna dos Recursos (Template/Imagem) */
-    .resources-column {
-        flex: 1.5; 
-        min-width: 600px; 
-    }
-    .resource-box { 
-        border: 1px solid #ccc; 
-        padding: 25px; 
-        border-radius: 8px; 
-        background: #fff; 
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
-    }
-    h3 { color: #444; margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px;}
-
-    /* Botão de Download */
-    .download-button { 
-        display: block; text-align: center; background-color: #198754; color: white; padding: 12px 20px;
-        border-radius: 4px; text-decoration: none; font-size: 1.1em; margin-top: 15px;
-    }
-    .download-button:hover { background-color: #157347; }
-
-    /* Imagem da Norma */
-    .norma-image {
-        width: 100%; 
-        height: auto;
-        margin-top: 20px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-    }
-</style>
+        .resources-column {
+            flex: 1.5; 
+            min-width: 600px;
+        }
+        .resource-box { 
+            border: 1px solid #ccc; 
+            padding: 25px; 
+            border-radius: 8px; 
+            background: #fff; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+        }
+        h3 { color: #444; margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px;}
+        .download-button { 
+            display: block; text-align: center; background-color: #198754; color: white; padding: 12px 20px;
+            border-radius: 4px; text-decoration: none; font-size: 1.1em; margin-top: 15px;
+        }
+        .download-button:hover { background-color: #157347; }
+        .norma-image {
+            width: 100%; 
+            height: auto; 
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
 </head>
 <body>
 
-    <h1>Calculadora IGG (DNIT PRO-006)</h1>
+    <div class="container">
+        <h1>Calculadora IGG (DNIT PRO-006)</h1>
 
-    <form action="/upload" method="POST" enctype="multipart/form-data">
+        <div class="form-column">
+            <form action="/upload" method="POST" enctype="multipart/form-data">
 
-        <div>
-            <label for="planilha">1. Selecione a planilha (.xlsx):</label>
-            <input type="file" name="planilha" id="planilha" accept=".xlsx, .xls" required>
+                <div>
+                    <label for="planilha">1. Selecione a planilha (.xlsx):</label>
+                    <input type="file" name="planilha" id="planilha" accept=".xlsx, .xls" required>
+                </div>
+
+                <div>
+                    <label for="modo_segmentacao">2. Como deseja segmentar?</label>
+                    <select name="modo_segmentacao" id="modo_segmentacao" onchange="toggleSegmentos()" required>
+                        <option value="por_km">Por Km (Padrão 1km)</option>
+                        <option value="homogenea">Segmentação Homogênea (Manual)</option>
+                    </select>
+                </div>
+
+                <div id="segmentos_div" style="display: none;">
+                    <label for="segmentos_texto">3. Insira os Segmentos (Início, Fim):</label>
+                    <textarea name="segmentos_texto" id="segmentos_texto" placeholder="Ex:&#10;1.476, 2.050&#10;2.050, 3.093&#10;3.093, 5.146"></textarea>
+                </div>
+
+                <div>
+                    <label for="modo_calculo">4. Qual o modo de cálculo?</label>
+                    <select name="modo_calculo" id="modo_calculo" required>
+                        <option value="intercalado">Intercalado (PRO-006 Padrão)</option>
+                        <option value="somado">Somado (LE + LD em todas as estacas)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="tipo_pista">5. Qual o tipo de inventário?</label>
+                    <select name="tipo_pista" id="tipo_pista" required>
+                        <option value="simples">Pista Simples (Alternado LE/LD)</option>
+                        <option value="dupla">Pista Dupla (Alternado LE/LD)</option>
+                        <option value="terceira_faixa">Terceira Faixa (LE, pulando estacas)</option>
+                    </select>
+                    <small class="warning-text">Nota: Se 'Modo de Cálculo' for 'Somado', esta opção é ignorada.</small>
+                </div>
+
+                <div>
+                    <label for="linha_inicial">6. Em qual linha começam os dados?</label>
+                    <input type="number" name="linha_inicial" id="linha_inicial" placeholder="Ex: 8" value="8" min="1" required>
+                </div>
+
+                <div>
+                    <p class="warning-text">
+                        <strong>*Certifique-se que o seu inventário esteja preenchido por estaca, de 20 em 20 metros, ou seja, de 0,020 a 0,020 a cada linha.</strong>
+                    </p>
+                    <input type="submit" value="Processar Planilha">
+                </div>
+
+            </form>
         </div>
 
-        <div>
-            <label for="modo_calculo">2. Qual o modo de cálculo?</label>
-            <select name="modo_calculo" id="modo_calculo" required>
-                <option value="intercalado">Intercalado (PRO-006 Padrão)</option>
-                <option value="somado">Somado (LE + LD em todas as estacas)</option>
-            </select>
-        </div>
-
-        <div>
-            <label for="tipo_pista">3. Qual o tipo de inventário?</label>
-            <select name="tipo_pista" id="tipo_pista" required>
-                <option value="simples">Pista Simples (Alternado LE/LD)</option>
-                <option value="dupla">Pista Dupla (Alternado LE/LD)</option>
-                <option value="terceira_faixa">Terceira Faixa (LE, pulando estacas)</option>
-            </select>
-            <small>Nota: Se 'Modo de Cálculo' for 'Somado', esta opção é ignorada.</small>
-        </div>
-
-        <div>
-            <label for="linha_inicial">4. Em qual linha começam os dados?</label>
-            <input type="number" name="linha_inicial" id="linha_inicial" placeholder="Ex: 8" value="8" min="1" required>
-        </div>
-
-        <div>
-            <input type="submit" value="Processar Planilha">
-        </div>
-
-    </form>
-
-    <div class="resources-column">
+        <div class="resources-column">
             <div class="resource-box">
                 <h3>Recursos</h3>
                 <p>Não tem uma planilha? Baixe o nosso modelo base em .xlsx, preencha com seus dados e faça o upload.</p>
-
-                <a href="/static/Planilha_Base_PRO006.xlsx" class="download-button" download>
+                <a href="/static/planilha_base_pro006.xlsx" class="download-button" download>
                     Baixar Planilha Base (.xlsx)
                 </a>
-
                 <h3 style="margin-top: 30px;">Estrutura da Norma (PRO-006)</h3>
                 <p>O programa segue a estrutura de 23 colunas (por lado) da norma, como mostrado abaixo:</p>
-
-                <img src="/static/norma_tempLate.png" alt="Planilha Padrão da Norma DNIT" class="norma-image">
+                <img src="/static/norma_template.png" alt="Planilha Padrão da Norma DNIT" class="norma-image">
             </div>
         </div>
 
     </div>
+
+    <script>
+        function toggleSegmentos() {
+            var modo = document.getElementById('modo_segmentacao').value;
+            var divSegmentos = document.getElementById('segmentos_div');
+            var textareaSegmentos = document.getElementById('segmentos_texto');
+
+            if (modo === 'homogenea') {
+                divSegmentos.style.display = 'block';
+                textareaSegmentos.required = true;
+            } else {
+                divSegmentos.style.display = 'none';
+                textareaSegmentos.required = false;
+            }
+        }
+    </script>
 
 </body>
 </html>
