@@ -12,24 +12,25 @@ CREATE TABLE estacas (
 
     tipo_pista TEXT NOT NULL,
     modo_calculo TEXT NOT NULL,
+    modo_segmentacao TEXT NOT NULL, -- <-- A CORREÇÃO ESTÁ AQUI
     foi_inventariada INTEGER NOT NULL,
 
-    -- Defeitos Agrupados
+    -- Colunas BINÁRIAS (1 ou 0) para defeitos agrupados
     g1 INTEGER DEFAULT 0,
     g2 INTEGER DEFAULT 0,
     g3 INTEGER DEFAULT 0,
-    g4a INTEGER DEFAULT 0, -- CORREÇÃO: G4a (ALP, ATP)
-    g4b INTEGER DEFAULT 0, -- CORREÇÃO: G4b (ALC, ATC)
+    g4a INTEGER DEFAULT 0,
+    g4b INTEGER DEFAULT 0,
 
-    -- Defeitos Individuais
-    d_o INTEGER DEFAULT 0,  -- CORREÇÃO: G5 (O)
-    d_p INTEGER DEFAULT 0,  -- CORREÇÃO: G5 (P)
-    d_e INTEGER DEFAULT 0,  -- CORREÇÃO: G5 (E)
+    -- Colunas BINÁRIAS (1 ou 0) para defeitos individuais
+    d_o INTEGER DEFAULT 0,
+    d_p INTEGER DEFAULT 0,
+    d_e INTEGER DEFAULT 0,
     d_ex INTEGER DEFAULT 0,
     d_d INTEGER DEFAULT 0,
     d_r INTEGER DEFAULT 0,
 
-    -- Flechas (FCH)
+    -- Colunas para o cálculo das Flechas (FCH)
     fch_media_estaca REAL DEFAULT 0.0,
     fch_var_estaca REAL DEFAULT 0.0
 );
@@ -37,3 +38,6 @@ CREATE TABLE estacas (
 
 conn.commit()
 conn.close()
+
+print("Banco de dados 'projeto_pro006.db' (V7) criado com sucesso!")
+print("Coluna 'modo_segmentacao' foi adicionada.")
