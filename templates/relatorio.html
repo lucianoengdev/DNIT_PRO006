@@ -17,7 +17,7 @@
         hr { margin: 40px 0; border: 0; border-top: 1px solid #eee; }
         .tabela-memoria { width: 3000px; }
         .scroll-container { width: 100%; overflow-x: auto; }
-        .conceito-ótimo { color: rgb(1, 161, 1); font-weight: bold; }
+        .conceito-ótimo { color: green; font-weight: bold; }
         .conceito-bom { color: #8a8a00; font-weight: bold; }
         .conceito-regular { color: orange; font-weight: bold; }
         .conceito-ruim { color: red; font-weight: bold; }
@@ -28,32 +28,22 @@
     <div class="container">
         <h1>Relatório de Análise IGG (PRO-006)</h1>
 
-        <h2>Linear de Ocorrência (Média FCH por Estaca Inventariada)</h2>
-        <p>Este gráfico mostra a média das flechas (TRI/TRE) para cada estaca de 20m que foi inventariada.</p>
-        <div id="graficoDiv_FCH" class="grafico"></div>
+        <div id="graficoDiv_FCH" class="grafico"></div><hr>
+        <div id="graficoDiv_IGG" class="grafico"></div><hr>
 
-        <hr>
-
-        <h2>IGG por Segmento (Soma)</h2>
-        <p>Este gráfico mostra o IGG (Índice de Gravidade Global = ΣIGI) para cada segmento de 1km.</p>
-        <div id="graficoDiv_IGG" class="grafico"></div>
-
-        <hr>
-
-        <h2>Resumo por Segmento (km)</h2>
-        <table>
+        <h2>Resumo por Segmento</h2> <table>
             <thead>
                 <tr>
-                    <th>Segmento (km)</th>
-                    <th>Trecho Início</th>
-                    <th>Trecho Fim (Corrigido)</th>
+                    <th>Segmento</th> <th>Trecho Início</th>
+                    <th>Trecho Fim</th>
                     <th>IGG (Soma)</th>
-                    <th>Conceito</th> </tr>
+                    <th>Conceito</th>
+                </tr>
             </thead>
             <tbody>
                 {% for segmento in segmentos %}
                 <tr>
-                    <td>{{ segmento.km_segmento }}</td>
+                    <td><strong>Segmento {{ loop.index }}</strong></td>
                     <td>{{ "%.3f"|format(segmento.km_inicio) }}</td>
                     <td>{{ "%.3f"|format(segmento.km_fim_corrigido) }}</td>
                     <td><strong>{{ "%.2f"|format(segmento.igg_soma) }}</strong></td>
@@ -72,7 +62,7 @@
             <table class="tabela-memoria">
                 <thead>
                     <tr>
-                        <th>Km</th><th>N</th>
+                        <th>Seg</th> <th>N</th>
                         <th>f_abs_g1</th><th>f_r_g1</th><th>IGI_G1</th>
                         <th>f_abs_g2</th><th>f_r_g2</th><th>IGI_G2</th>
                         <th>f_abs_g3</th><th>f_r_g3</th><th>IGI_G3</th>
@@ -91,8 +81,7 @@
                 <tbody>
                     {% for seg in memoria %}
                     <tr>
-                        <td><strong>{{ seg.km_segmento }}</strong></td>
-                        <td>{{ seg.N }}</td>
+                        <td><strong>{{ seg.km_segmento + 1 }}</strong></td> <td>{{ seg.N }}</td>
                         <td>{{ seg.f_abs_g1 }}</td><td>{{ "%.2f"|format(seg.f_r_g1) }}</td><td>{{ "%.2f"|format(seg.igi_g1) }}</td>
                         <td>{{ seg.f_abs_g2 }}</td><td>{{ "%.2f"|format(seg.f_r_g2) }}</td><td>{{ "%.2f"|format(seg.igi_g2) }}</td>
                         <td>{{ seg.f_abs_g3 }}</td><td>{{ "%.2f"|format(seg.f_r_g3) }}</td><td>{{ "%.2f"|format(seg.igi_g3) }}</td>
@@ -114,7 +103,6 @@
     </div>
 
     <script>
-        // SCRIPT ATUALIZADO (Plota os DOIS gráficos)
         var graphJSON_FCH = {{ graphJSON_FCH | safe }};
         Plotly.newPlot('graficoDiv_FCH', graphJSON_FCH.data, graphJSON_FCH.layout);
 
