@@ -38,6 +38,3 @@ CREATE TABLE estacas (
 
 conn.commit()
 conn.close()
-
-print("Banco de dados 'projeto_pro006.db' (V7) criado com sucesso!")
-print("Coluna 'modo_segmentacao' foi adicionada.")
