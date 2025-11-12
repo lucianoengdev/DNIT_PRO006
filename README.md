@@ -56,3 +56,11 @@ This project serves as a robust foundation. After submission, I plan to expand i
 * Homogeneous Segments: Add an option for the user to define custom homogeneous segments (e.g., based on pavement type or construction date) instead of using the default 1km segments.
 * Email Reports: Implement a feature to ask for the user's email and send the complete report (with graphs and data) as an attachment.
 * UI/UX Enhancements: Refine the index.html and relatorio.html pages to create a more polished, modern, and visually appealing user experience.
+
+
+
+update november 12, 2025 at 00:30am
+First improvement already done:
+
+[x] Implement 1: Homogeneous Segments: Add an option for the user to define custom homogeneous segments (e.g., based on pavement type or construction date) instead of using the default 1km segments. (Done)
+-> The user can choose if it will use an input of homogeneus segment that he did or use the 1km standard
